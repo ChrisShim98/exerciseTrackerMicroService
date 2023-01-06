@@ -48,7 +48,6 @@ app.get("/api/users/:_id", function(req, res) {
   else {
     user.find({_id: req.params['_id']}, (err, userFound) => {
       if (err) console.log(err); 
-      console.log(userFound.username);
       if (userFound.length === 0) {
         res.json({response: "User not found"});  
       } else {
@@ -78,8 +77,6 @@ app.post("/api/users", bodyParser.urlencoded({ extended: false }), function(req,
 // Post exercise form data
 app.post("/api/users/:_id/exercises", bodyParser.urlencoded({ extended: false }), function(req, res) {
   let id = req.params['_id'];
-
-  console.log(req.params);
   
   let description = req.body.description;
   let duration = req.body.duration;
@@ -100,7 +97,6 @@ app.post("/api/users/:_id/exercises", bodyParser.urlencoded({ extended: false })
 
   user.findById({_id: id}, (err, personFound) => {
     if (err) console.log(err);
-    console.log(personFound);
     if (personFound == null) {
       res.json({error: "No user exists with id"}); 
     } else {
@@ -123,7 +119,7 @@ app.post("/api/users/:_id/exercises", bodyParser.urlencoded({ extended: false })
 app.get("/api/users/:_id/logs", function(req, res) {  
   let fromDate = JSON.stringify(req.headers['from']);
   let toDate = JSON.stringify(req.headers['to']);
-  let limit = req.query.limit !== undefined ? req.query.limit : 100;
+  let limit = req.headers['limit'] !== undefined ? req.headers['limit'] : 100;
 
   user.find({_id: req.params['_id']}, (err, personFound) => {
     if (err) console.log(err);   
@@ -140,13 +136,18 @@ app.get("/api/users/:_id/logs", function(req, res) {
           res.json({error: "No plans exists with id"}); 
         } else {
           let logs = [];
-          for (let i = 0; i < (exerciseFound.length > limit ? limit : exerciseFound.length); i++) {
+          let count = exerciseFound.length;
+          for (let i = 0; i < exerciseFound.length; i++) {
+            if (i == parseInt(limit)) {
+              count = parseInt(limit);
+              break;
+            };
             let stringDate = exerciseFound[i].date.toDateString();
             logs.push({
               description: exerciseFound[i].description,
               duration: exerciseFound[i].duration,
               date: stringDate
-            })
+            });
           }
           (fromDate !== undefined && toDate !== undefined) ?
           res.json({
@@ -154,7 +155,7 @@ app.get("/api/users/:_id/logs", function(req, res) {
             username: personFound[0].username,
             from: new Date(req.headers['from']).toDateString(),
             to: new Date(req.headers['to']).toDateString(),
-            count: exerciseFound.length,
+            count: count,
             log: logs
           }) :
           res.json({
@@ -164,7 +165,7 @@ app.get("/api/users/:_id/logs", function(req, res) {
             log: logs
           })
         }
-      })
+      }).limit(limit)
     }   
   });
 })
