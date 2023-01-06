@@ -116,20 +116,22 @@ app.post("/api/users/:_id/exercises", bodyParser.urlencoded({ extended: false })
 })
 
 // Get exercise logs
-app.get("/api/users/:_id/logs", function(req, res) {  
-  let fromDate = JSON.stringify(req.headers['from']);
-  let toDate = JSON.stringify(req.headers['to']);
-  let limit = req.headers['limit'] !== undefined ? req.headers['limit'] : 100;
+app.get("/api/users/:_id/logs:from?:to?:limit?", function(req, res) {  
+  let idParam = req.params['_id'];
+  let fromDate = JSON.stringify(req.query['from']);
+  let toDate = JSON.stringify(req.query['to']);
+  let limit = req.query['limit'] !== undefined ? req.query['limit'] : 100;
 
-  user.find({_id: req.params['_id']}, (err, personFound) => {
-    if (err) console.log(err);   
+  user.find({_id: idParam}, (err, personFound) => {
+    if (err) console.log(err); 
+     
 
     if (personFound.length === 0) {
-      res.json({error: "No user exists with id", sentParams: req.params['_id']}); 
+      res.json({error: "No user exists with id", sentParams: idParam}); 
     } else {
       exercise.find((fromDate !== undefined && toDate !== undefined) ? 
-      {uId: req.params['_id'], date: {$gte: new Date(fromDate), $lt: new Date(toDate)}} :
-      {uId: req.params['_id']}, (err, exerciseFound) => {
+      {uId: idParam, date: {$gte: new Date(fromDate), $lt: new Date(toDate)}} :
+      {uId: idParam}, (err, exerciseFound) => {
         if (err) console.log(err); 
 
         if (exerciseFound.length === 0) {
@@ -153,8 +155,8 @@ app.get("/api/users/:_id/logs", function(req, res) {
           res.json({
             _id: personFound[0]['_id'],
             username: personFound[0].username,
-            from: new Date(req.headers['from']).toDateString(),
-            to: new Date(req.headers['to']).toDateString(),
+            from: new Date(req.query['from']).toDateString(),
+            to: new Date(req.query['to']).toDateString(),
             count: count,
             log: logs
           }) :
